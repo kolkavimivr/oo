@@ -139,7 +139,7 @@
       responseOutput.textContent = text;
       previewFrame.srcdoc = text;
 
-      // יירוט לחיצות על קישורים פנימיים
+      // יירוט לחיצות על קישורים פנימיים כדי שכל הניווט ימשיך דרך הפרוקסי
       previewFrame.onload = () => {
         try {
           const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
