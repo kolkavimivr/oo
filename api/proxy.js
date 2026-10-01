@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // הגדרת כותרות להתרת גישה (CORS)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -8,7 +7,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // קבלת כתובת היעד מהפרמטר url (למשל: ?url=https://example.com)
   const targetUrl = req.query.url;
 
   if (!targetUrl) {
@@ -19,16 +17,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    // השרת של Vercel מוציא פנייה ישירה אל כתובת היעד
+    const urlObj = new URL(targetUrl);
+    const origin = urlObj.origin;
+
     const fetchResponse = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7'
       }
     });
 
-    const bodyText = await fetchResponse.text();
-    const contentType = fetchResponse.headers.get('content-type') || 'text/plain';
+    let contentType = fetchResponse.headers.get('content-type') || 'text/html';
+    let bodyText = await fetchResponse.text();
+
+    // אם התוכן הוא HTML, נזריק תגית <base> כדי שכל המשאבים (CSS/JS/תמונות) יטענו מהאתר המקורי
+    if (contentType.includes('text/html')) {
+      const baseTag = `<base href="${targetUrl}">`;
+      if (bodyText.includes('<head>')) {
+        bodyText = bodyText.replace('<head>', `<head>${baseTag}`);
+      } else {
+        bodyText = baseTag + bodyText;
+      }
+    }
 
     res.setHeader('Content-Type', contentType);
     return res.status(fetchResponse.status).send(bodyText);
