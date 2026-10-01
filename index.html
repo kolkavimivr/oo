@@ -12,7 +12,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       background: #ffffff;
       padding: 25px;
@@ -69,7 +69,7 @@
       padding: 15px;
       border-radius: 8px;
       overflow-x: auto;
-      max-height: 250px;
+      max-height: 200px;
       font-size: 13px;
       direction: ltr;
       text-align: left;
@@ -79,7 +79,7 @@
     }
     iframe {
       width: 100%;
-      height: 450px;
+      height: 600px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       background: #fff;
@@ -92,53 +92,42 @@
   <h1>בדיקת תעבורה ונקודות קצה (Vercel Endpoint Tester)</h1>
 
   <div class="form-group">
-    <label for="endpoint">כתובת ה-API לבדיקה:</label>
-    <input type="text" id="endpoint" value="api/proxy?url=https://example.com" placeholder="למשל: api/proxy?url=https://example.com">
+    <label for="targetUrlInput">כתובת אתר היעד להצגה:</label>
+    <input type="text" id="targetUrlInput" value="https://example.com" placeholder="הכנס כתובת מלאה, למשל: https://example.com">
   </div>
 
-  <div class="form-group">
-    <label for="method">שיטת שליחה (Method):</label>
-    <select id="method">
-      <option value="GET">GET</option>
-      <option value="POST">POST</option>
-    </select>
-  </div>
-
-  <button onclick="sendRequest()">שלח בקשה לבדיקה</button>
+  <button onclick="runProxy()">טען אתר דרך ה-Proxy</button>
 
   <div id="statusContainer" class="status-badge"></div>
 
-  <label style="margin-top: 15px;">תגובת השרת (Raw Response):</label>
+  <label style="margin-top: 15px;">תגובת השרת הגולמית (Raw Data):</label>
   <pre id="responseOutput">תוצאות הבדיקה יופיעו כאן...</pre>
 
   <div class="preview-container">
-    <label>תצוגה מקדימה מרונדרת (HTML Preview):</label>
+    <label>תצוגת אתר מעובדת (HTML Preview):</label>
     <iframe id="previewFrame"></iframe>
   </div>
 </div>
 
 <script>
-  async function sendRequest() {
-    const endpointInput = document.getElementById('endpoint').value.trim();
-    const method = document.getElementById('method').value;
+  async function loadUrlThroughProxy(targetUrl) {
     const statusContainer = document.getElementById('statusContainer');
     const responseOutput = document.getElementById('responseOutput');
     const previewFrame = document.getElementById('previewFrame');
+    const targetInput = document.getElementById('targetUrlInput');
 
-    statusContainer.innerHTML = 'שולח בקשה...';
+    targetInput.value = targetUrl;
+    statusContainer.innerHTML = 'שולח בקשה ל-Proxy...';
     responseOutput.textContent = 'טוען...';
-    previewFrame.srcdoc = '<html><body style="font-family:sans-serif; text-align:center; padding-top:50px; color:#666;">טוען תצוגה מקדימה...</body></html>';
 
+    const endpointPath = '/api/proxy?url=' + encodeURIComponent(targetUrl);
     const startTime = performance.now();
 
     try {
-      const response = await fetch('/' + endpointInput, { method: method });
+      const response = await fetch(endpointPath);
       const duration = Math.round(performance.now() - startTime);
-
-      const contentType = response.headers.get('content-type') || '';
       const text = await response.text();
 
-      // עדכון הסטטוס
       if (response.ok) {
         statusContainer.className = 'status-badge status-200';
         statusContainer.textContent = `סטטוס: ${response.status} OK (${duration}ms)`;
@@ -147,17 +136,40 @@
         statusContainer.textContent = `סטטוס: ${response.status} (${duration}ms)`;
       }
 
-      // הצגת התגובה בתיבת ה-Raw
       responseOutput.textContent = text;
-
-      // הזרקת ה-HTML אל ה-iframe כדי להציג את האתר בצורה ויזואלית ומסודרת
       previewFrame.srcdoc = text;
+
+      // לאחר הזרקת ה-HTML ל-iframe, נתפוס קליקים על קישורים כדי שיעברו דרך ה-Proxy
+      previewFrame.onload = () => {
+        try {
+          const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+          const links = iframeDoc.querySelectorAll('a');
+          links.forEach(link => {
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              const href = link.getAttribute('href');
+              if (href && !href.startsWith('javascript:')) {
+                const fullUrl = new URL(href, targetUrl).href;
+                loadUrlThroughProxy(fullUrl);
+              }
+            });
+          });
+        } catch (err) {
+          console.log('נכשלה גישה ל-iframe ליירוט קישורים:', err);
+        }
+      };
 
     } catch (error) {
       statusContainer.className = 'status-badge status-error';
       statusContainer.textContent = 'שגיאת תקשורת';
-      responseOutput.textContent = 'אירעה שגיאה בביצוע הבקשה:\n' + error.message;
-      previewFrame.srcdoc = '<html><body style="font-family:sans-serif; text-align:center; padding-top:50px; color:red;">שגיאה בטעינת התצוגה המקדימה</body></html>';
+      responseOutput.textContent = 'אירעה שגיאה:\n' + error.message;
+    }
+  }
+
+  function runProxy() {
+    const targetUrl = document.getElementById('targetUrlInput').value.trim();
+    if (targetUrl) {
+      loadUrlThroughProxy(targetUrl);
     }
   }
 </script>
