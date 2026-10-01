@@ -6,8 +6,8 @@
   <title>בדיקת תעבורה ונקודות קצה (Vercel Endpoint Tester)</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
       margin: 0;
       padding: 20px;
     }
@@ -21,7 +21,7 @@
     }
     h1 {
       text-align: center;
-      color: #1a252f;
+      color: #0f172a;
       margin-bottom: 20px;
     }
     .form-group {
@@ -31,15 +31,15 @@
       display: block;
       font-weight: bold;
       margin-bottom: 5px;
-      color: #333;
+      color: #334155;
     }
-    input[type="text"], select {
+    input[type="text"] {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
       border-radius: 6px;
       box-sizing: border-box;
-      font-size: 14px;
+      font-size: 15px;
     }
     button {
       width: 100%;
@@ -79,7 +79,7 @@
     }
     iframe {
       width: 100%;
-      height: 600px;
+      height: 650px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       background: #fff;
@@ -93,7 +93,7 @@
 
   <div class="form-group">
     <label for="targetUrlInput">כתובת אתר היעד להצגה:</label>
-    <input type="text" id="targetUrlInput" value="https://example.com" placeholder="הכנס כתובת מלאה, למשל: https://example.com">
+    <input type="text" id="targetUrlInput" value="https://example.com" placeholder="הכנס כתובת מלאה, למשל: https://example.com או קישור YouTube">
   </div>
 
   <button onclick="runProxy()">טען אתר דרך ה-Proxy</button>
@@ -139,23 +139,23 @@
       responseOutput.textContent = text;
       previewFrame.srcdoc = text;
 
-      // לאחר הזרקת ה-HTML ל-iframe, נתפוס קליקים על קישורים כדי שיעברו דרך ה-Proxy
+      // יירוט לחיצות על קישורים פנימיים
       previewFrame.onload = () => {
         try {
           const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
           const links = iframeDoc.querySelectorAll('a');
           links.forEach(link => {
             link.addEventListener('click', (e) => {
-              e.preventDefault();
               const href = link.getAttribute('href');
-              if (href && !href.startsWith('javascript:')) {
+              if (href && !href.startsWith('javascript:') && !href.startsWith('#')) {
+                e.preventDefault();
                 const fullUrl = new URL(href, targetUrl).href;
                 loadUrlThroughProxy(fullUrl);
               }
             });
           });
         } catch (err) {
-          console.log('נכשלה גישה ל-iframe ליירוט קישורים:', err);
+          console.log('יירוט קישורים לא זמין עבור iframe זה:', err);
         }
       };
 
