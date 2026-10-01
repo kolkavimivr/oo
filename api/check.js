@@ -1,29 +1,31 @@
-export default function handler(req, res) {
-  // הגדרת כותרות להתרת גישה (CORS)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export default async function handler(req, res) {
+  // קבלת כתובת היעד מתוך פרמטר ב-URL (לדוגמה: /api/proxy?url=https://example.com)
+  const targetUrl = req.query.url;
 
-  // טיפול בבקשת preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (!targetUrl) {
+    return res.status(400).json({ error: "יש לציין פרמטר url" });
   }
 
-  // החזרת נתוני הבקשה בפורמט JSON
-  res.status(200).json({
-    status: "success",
-    message: "הבקשה התקבלה בהצלחה בשרתי Vercel",
-    timestamp: new Date().toISOString(),
-    requestDetails: {
+  try {
+    // השרת של Vercel פונה אל כתובת היעד
+    const response = await fetch(targetUrl, {
       method: req.method,
-      url: req.url,
-      headers: req.headers,
-      query: req.query,
-      body: req.body || null
-    },
-    serverEnvironment: {
-      nodeVersion: process.version,
-      region: process.env.VERCEL_REGION || "local"
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+      }
+    });
+
+    const data = await response.arrayBuffer();
+    const contentType = response.headers.get('content-type');
+
+    // החזרת התגובה מהיעד בחזרה למשתמש
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
     }
-  });
+    
+    return res.status(response.status).send(Buffer.from(data));
+
+  } catch (error) {
+    return res.status(500).json({ error: "שגיאה בגישה ליעד", details: error.message });
+  }
 }
