@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Chrome Browser</title>
+    <title>Chrome Browser</title>
     <style>
         * {
             box-sizing: border-box;
@@ -19,7 +19,6 @@
             background-color: #202124;
         }
 
-        /* מעטפת החלון של הדפדפן */
         .browser-window {
             display: flex;
             flex-direction: column;
@@ -27,7 +26,7 @@
             width: 100vw;
         }
 
-        /* סרגל כרטיסיות עליון */
+        /* סרגל כרטיסיות */
         .tab-bar {
             background-color: #1e1f22;
             height: 40px;
@@ -97,11 +96,6 @@
             background-color: rgba(255, 255, 255, 0.1);
         }
 
-        .nav-btn:active {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* שורת הכתובת */
         .address-bar-container {
             flex: 1;
             position: relative;
@@ -126,7 +120,6 @@
         .address-bar:focus {
             background-color: #141517;
             border-color: #8ab4f8;
-            box-shadow: 0 0 0 1px #8ab4f8;
         }
 
         .action-btn {
@@ -140,14 +133,9 @@
             font-weight: bold;
             font-size: 12px;
             cursor: pointer;
-            transition: opacity 0.15s;
         }
 
-        .action-btn:hover {
-            opacity: 0.9;
-        }
-
-        /* אינדיקטור טעינה */
+        /* פס טעינה */
         .progress-bar {
             height: 3px;
             width: 100%;
@@ -170,7 +158,7 @@
             100% { left: 100%; }
         }
 
-        /* שטח תצוגת האתר */
+        /* שטח תצוגה */
         .viewport-container {
             flex: 1;
             width: 100%;
@@ -189,7 +177,6 @@
 <body>
 
 <div class="browser-window">
-    <!-- לשוניות -->
     <div class="tab-bar">
         <div class="tab">
             <div class="tab-favicon"></div>
@@ -197,105 +184,125 @@
         </div>
     </div>
 
-    <!-- סרגל ניווט -->
     <div class="toolbar">
         <button class="nav-btn" title="אחורה" onclick="navigateBack()">&#129144;</button>
         <button class="nav-btn" title="קדימה" onclick="navigateForward()">&#129146;</button>
         <button class="nav-btn" title="רענן" onclick="reloadViewport()">&#8635;</button>
-        <button class="nav-btn" title="דף הבית" onclick="goHome()">&#8962;</button>
 
         <div class="address-bar-container">
-            <input type="text" id="urlInput" class="address-bar" placeholder="הקלד כתובת אתר (לדוגמה: example.com)" onkeydown="handleKeyPress(event)">
-            <button class="action-btn" onclick="loadUrl()">עבור</button>
+            <input type="text" id="targetUrlInput" class="address-bar" placeholder="הכנס כתובת (למשל: https://example.com)" onkeydown="handleKeyPress(event)">
+            <button class="action-btn" onclick="runProxy()">עבור</button>
         </div>
     </div>
 
-    <!-- פס טעינה -->
     <div class="progress-bar" id="progressBar"></div>
 
-    <!-- פריים הצגת האתר -->
     <div class="viewport-container">
-        <iframe id="mainViewport" src="about:blank"></iframe>
+        <iframe id="previewFrame"></iframe>
     </div>
 </div>
 
 <script>
-    const viewport = document.getElementById('mainViewport');
-    const urlInput = document.getElementById('urlInput');
-    const progressBar = document.getElementById('progressBar');
-    const tabTitle = document.getElementById('tabTitle');
+    let currentTargetUrl = '';
+    const historyStack = [];
+    let historyIndex = -1;
 
-    // טעינת כתובת בתוך הפריים
-    function loadUrl() {
-        let rawUrl = urlInput.value.trim();
-        if (!rawUrl) return;
+    async function loadUrlThroughProxy(targetUrl, addToHistory = true) {
+        const progressBar = document.getElementById('progressBar');
+        const previewFrame = document.getElementById('previewFrame');
+        const targetInput = document.getElementById('targetUrlInput');
+        const tabTitle = document.getElementById('tabTitle');
 
-        // הוספת פרוטוקול במידה וחסר
-        if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
-            rawUrl = 'https://' + rawUrl;
-            urlInput.value = rawUrl;
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'https://' + targetUrl;
         }
 
-        startLoading();
-        viewport.src = rawUrl;
+        currentTargetUrl = targetUrl;
+        targetInput.value = targetUrl;
+        progressBar.classList.add('is-loading');
+        
+        try {
+            const parsed = new URL(targetUrl);
+            tabTitle.textContent = parsed.hostname;
+        } catch(e) {
+            tabTitle.textContent = 'טוען...';
+        }
+
+        if (addToHistory) {
+            if (historyIndex < historyStack.length - 1) {
+                historyStack.splice(historyIndex + 1);
+            }
+            historyStack.push(targetUrl);
+            historyIndex = historyStack.length - 1;
+        }
+
+        const endpointPath = '/api/proxy?url=' + encodeURIComponent(targetUrl);
+
+        try {
+            const response = await fetch(endpointPath);
+            const text = await response.text();
+
+            previewFrame.srcdoc = text;
+
+            // יירוט לחיצות על קישורים פנימיים כדי שימשיכו לעבור דרך השרת
+            previewFrame.onload = () => {
+                progressBar.classList.remove('is-loading');
+                try {
+                    const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+                    const links = iframeDoc.querySelectorAll('a');
+                    links.forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            const href = link.getAttribute('href');
+                            if (href && !href.startsWith('javascript:') && !href.startsWith('#')) {
+                                e.preventDefault();
+                                const fullUrl = new URL(href, targetUrl).href;
+                                loadUrlThroughProxy(fullUrl);
+                            }
+                        });
+                    });
+                } catch (err) {
+                    console.log('יירוט קישורים אינו זמין עבור iframe זה:', err);
+                }
+            };
+
+        } catch (error) {
+            progressBar.classList.remove('is-loading');
+            previewFrame.srcdoc = `<div style="font-family:sans-serif; padding:40px; text-align:center;"><h2>שגיאת תקשורת</h2><p>${error.message}</p></div>`;
+        }
     }
 
-    function handleKeyPress(event) {
-        if (event.key === 'Enter') {
-            loadUrl();
+    function runProxy() {
+        const targetUrl = document.getElementById('targetUrlInput').value.trim();
+        if (targetUrl) {
+            loadUrlThroughProxy(targetUrl);
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            runProxy();
         }
     }
 
     function reloadViewport() {
-        if (viewport.src && viewport.src !== 'about:blank') {
-            startLoading();
-            viewport.contentWindow.location.reload();
+        if (currentTargetUrl) {
+            loadUrlThroughProxy(currentTargetUrl, false);
         }
     }
 
-    function goHome() {
-        urlInput.value = '';
-        tabTitle.textContent = 'כרטיסייה חדשה';
-        viewport.src = 'about:blank';
-    }
-
     function navigateBack() {
-        try {
-            viewport.contentWindow.history.back();
-        } catch (e) {
-            console.log('חזרה אחורה אינה זמינה');
+        if (historyIndex > 0) {
+            historyIndex--;
+            loadUrlThroughProxy(historyStack[historyIndex], false);
         }
     }
 
     function navigateForward() {
-        try {
-            viewport.contentWindow.history.forward();
-        } catch (e) {
-            console.log('מעבר קדימה אינו זמין');
+        if (historyIndex < historyStack.length - 1) {
+            historyIndex++;
+            loadUrlThroughProxy(historyStack[historyIndex], false);
         }
     }
-
-    function startLoading() {
-        progressBar.classList.add('is-loading');
-        tabTitle.textContent = 'טוען...';
-    }
-
-    function stopLoading() {
-        progressBar.classList.remove('is-loading');
-        try {
-            if (urlInput.value) {
-                const parsedUrl = new URL(urlInput.value);
-                tabTitle.textContent = parsedUrl.hostname;
-            } else {
-                tabTitle.textContent = 'כרטיסייה חדשה';
-            }
-        } catch (e) {
-            tabTitle.textContent = 'דפדפן';
-        }
-    }
-
-    // מאזין לסיום טעינת הפריים
-    viewport.addEventListener('load', stopLoading);
 </script>
 
 </body>
