@@ -3,441 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מנגנון הצגת מדינה ואתרי אינטרנט מלאים</title>
+    <title>Google Chrome Browser</title>
     <style>
-        :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #1f1f1f;
-            --accent-color: #ff0000;
-            --text-color: #ffffff;
-            --subtext-color: #aaaaaa;
-            --border-color: #383838;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            height: 100vh;
+        body, html {
+            height: 100%;
+            width: 100%;
             overflow: hidden;
+            background-color: #202124;
         }
 
-        /* סרגל צד */
-        sidebar {
-            width: 280px;
-            background-color: #121212;
-            border-left: 1px solid var(--border-color);
+        /* מעטפת החלון של הדפדפן */
+        .browser-window {
             display: flex;
             flex-direction: column;
-            padding: 15px;
-            gap: 20px;
+            height: 100vh;
+            width: 100vw;
         }
 
-        sidebar h2 {
-            font-size: 1.2rem;
-            color: var(--accent-color);
+        /* סרגל כרטיסיות עליון */
+        .tab-bar {
+            background-color: #1e1f22;
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 8px;
+            gap: 6px;
+        }
+
+        .tab {
+            background-color: #35363a;
+            color: #f1f3f4;
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            font-size: 13px;
             display: flex;
             align-items: center;
+            gap: 10px;
+            width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
+        }
+
+        .tab-favicon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #8ab4f8;
+            flex-shrink: 0;
+        }
+
+        .tab-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* סרגל הכלים ושורת הכתובת */
+        .toolbar {
+            background-color: #2b2a2a;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
             gap: 8px;
+            border-bottom: 1px solid #3c4043;
         }
 
         .nav-btn {
             background: none;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 12px;
-            border-radius: 8px;
+            border: none;
+            color: #e8eaed;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             cursor: pointer;
-            text-align: right;
-            font-size: 0.95rem;
-            transition: 0.2s;
-        }
-
-        .nav-btn.active, .nav-btn:hover {
-            background-color: var(--card-bg);
-            border-color: var(--accent-color);
-        }
-
-        .input-group {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: background 0.15s;
         }
 
-        .input-group label {
-            font-size: 0.85rem;
-            color: var(--subtext-color);
+        .nav-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
-        input[type="text"] {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 10px;
-            border-radius: 6px;
-            outline: none;
-            font-size: 0.9rem;
+        .nav-btn:active {
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
-        input[type="text"]:focus {
-            border-color: #3ea6ff;
-        }
-
-        button.action-btn {
-            background-color: #272727;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        button.action-btn:hover {
-            background-color: #3f3f3f;
-        }
-
-        /* אזור תוכן מרכזי */
-        main {
+        /* שורת הכתובת */
+        .address-bar-container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
-            gap: 20px;
-        }
-
-        .tab-content {
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            height: 100%;
-        }
-
-        .tab-content.active {
-            display: flex;
-        }
-
-        /* נגן יוטיוב */
-        .player-wrapper {
             position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* יחס 16:9 */
-            background-color: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
         }
 
-        .player-wrapper iframe, .player-wrapper #youtube-player {
+        .address-bar {
+            width: 100%;
+            height: 34px;
+            background-color: #1e1f22;
+            border: 1px solid #4a4d51;
+            border-radius: 20px;
+            color: #e8eaed;
+            padding: 0 16px 0 45px;
+            font-size: 14px;
+            outline: none;
+            direction: ltr;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .address-bar:focus {
+            background-color: #141517;
+            border-color: #8ab4f8;
+            box-shadow: 0 0 0 1px #8ab4f8;
+        }
+
+        .action-btn {
             position: absolute;
-            top: 0;
-            left: 0;
+            left: 5px;
+            background: #8ab4f8;
+            color: #202124;
+            border: none;
+            border-radius: 14px;
+            padding: 4px 14px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* אינדיקטור טעינה */
+        .progress-bar {
+            height: 3px;
+            width: 100%;
+            background-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar.is-loading::before {
+            content: '';
+            position: absolute;
+            height: 100%;
+            width: 40%;
+            background-color: #8ab4f8;
+            animation: chrome-loader 1.2s infinite ease-in-out;
+        }
+
+        @keyframes chrome-loader {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+
+        /* שטח תצוגת האתר */
+        .viewport-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+        }
+
+        iframe {
             width: 100%;
             height: 100%;
             border: none;
-        }
-
-        /* תוצאות חיפוש */
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .video-card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .video-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--border-color);
-        }
-
-        .video-card img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-        }
-
-        .video-card .info {
-            padding: 10px;
-        }
-
-        .video-card .title {
-            font-size: 0.85rem;
-            font-weight: bold;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .video-card .channel {
-            font-size: 0.75rem;
-            color: var(--subtext-color);
-            margin-top: 5px;
-        }
-
-        /* מנגנון אתרים חיצוניים (Proxy Iframe) */
-        .web-viewer-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .web-viewer-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .web-viewer-controls input {
-            flex: 1;
-        }
-
-        .web-frame {
-            flex: 1;
-            width: 100%;
-            min-height: 500px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: #fff;
-        }
-
-        .status-bar {
-            padding: 8px 12px;
-            background-color: #1a1a1a;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: var(--subtext-color);
+            display: block;
         }
     </style>
 </head>
 <body>
 
-    <!-- סרגל ניווט ושליטה -->
-    <sidebar>
-        <h2>🎬 מנגנון תצוגה מלא</h2>
-
-        <button class="nav-btn active" onclick="switchTab('youtube-tab')">נגן YouTube אמיתי</button>
-        <button class="nav-btn" onclick="switchTab('search-tab')">חיפוש YouTube API</button>
-        <button class="nav-btn" onclick="switchTab('web-tab')">מעקף חסימות אתרים (Proxy)</button>
-
-        <hr style="border-color: var(--border-color);">
-
-        <!-- טעינה מהירה לפי URL או מזהה -->
-        <div class="input-group">
-            <label>הכנס קישור או ID של סרטון:</label>
-            <input type="text" id="video-input" placeholder="https://www.youtube.com/watch?v=...">
-            <button class="action-btn" onclick="loadVideoFromInput()">נגן סרטון</button>
+<div class="browser-window">
+    <!-- לשוניות -->
+    <div class="tab-bar">
+        <div class="tab">
+            <div class="tab-favicon"></div>
+            <span class="tab-title" id="tabTitle">כרטיסייה חדשה</span>
         </div>
+    </div>
 
-        <div class="input-group">
-            <label>YouTube API Key (רשות לחיפוש):</label>
-            <input type="text" id="api-key-input" placeholder="AIzaSy...">
+    <!-- סרגל ניווט -->
+    <div class="toolbar">
+        <button class="nav-btn" title="אחורה" onclick="navigateBack()">&#129144;</button>
+        <button class="nav-btn" title="קדימה" onclick="navigateForward()">&#129146;</button>
+        <button class="nav-btn" title="רענן" onclick="reloadViewport()">&#8635;</button>
+        <button class="nav-btn" title="דף הבית" onclick="goHome()">&#8962;</button>
+
+        <div class="address-bar-container">
+            <input type="text" id="urlInput" class="address-bar" placeholder="הקלד כתובת אתר (לדוגמה: example.com)" onkeydown="handleKeyPress(event)">
+            <button class="action-btn" onclick="loadUrl()">עבור</button>
         </div>
-    </sidebar>
+    </div>
 
-    <!-- אזור התוכן המרכזי -->
-    <main>
-        
-        <!-- לשונית 1: נגן YouTube רשמי -->
-        <div id="youtube-tab" class="tab-content active">
-            <h3>נגן YouTube מקורי (Iframe API)</h3>
-            <div class="status-bar" id="player-status">מצב: מוכן לנגן סרטונים.</div>
-            
-            <div class="player-wrapper">
-                <div id="youtube-player"></div>
-            </div>
+    <!-- פס טעינה -->
+    <div class="progress-bar" id="progressBar"></div>
 
-            <div class="input-group" style="flex-direction: row; gap: 10px;">
-                <button class="action-btn" onclick="player.playVideo()">הפעל</button>
-                <button class="action-btn" onclick="player.pauseVideo()">השהה</button>
-                <button class="action-btn" onclick="player.mute()">השתק</button>
-                <button class="action-btn" onclick="player.unMute()">בטל השתקה</button>
-            </div>
-        </div>
+    <!-- פריים הצגת האתר -->
+    <div class="viewport-container">
+        <iframe id="mainViewport" src="about:blank"></iframe>
+    </div>
+</div>
 
-        <!-- לשונית 2: חיפוש תוכן מ-YouTube API -->
-        <div id="search-tab" class="tab-content">
-            <h3>חיפוש תכנים בזמן אמת משרתי YouTube</h3>
-            <div class="input-group" style="flex-direction: row; gap: 10px;">
-                <input type="text" id="search-query" placeholder="חפש סרטון, ערוץ או נושא..." style="flex: 1;">
-                <button class="action-btn" onclick="searchYouTube()">חפש ב-API</button>
-            </div>
-            <div id="search-results" class="results-grid"></div>
-        </div>
+<script>
+    const viewport = document.getElementById('mainViewport');
+    const urlInput = document.getElementById('urlInput');
+    const progressBar = document.getElementById('progressBar');
+    const tabTitle = document.getElementById('tabTitle');
 
-        <!-- לשונית 3: מנגנון הצגת אתרים חיצוניים דרך Proxy -->
-        <div id="web-tab" class="tab-content">
-            <h3>הצגת אתרים שחוסמים Frame (דרך CORS Proxy)</h3>
-            <p style="font-size: 0.85rem; color: var(--subtext-color);">
-                אתרים רגילים חוסמים תצוגה ב-Iframe באמצעות כותרת X-Frame-Options. המנגנון להלן מעביר את הבקשה דרך פרוקסי שמסיר את החסימה.
-            </p>
-            <div class="web-viewer-container">
-                <div class="web-viewer-controls">
-                    <input type="text" id="web-url-input" placeholder="https://example.com">
-                    <button class="action-btn" onclick="loadWebPage()">טען אתר</button>
-                </div>
-                <iframe id="web-frame" class="web-frame" src="about:blank"></iframe>
-            </div>
-        </div>
+    // טעינת כתובת בתוך הפריים
+    function loadUrl() {
+        let rawUrl = urlInput.value.trim();
+        if (!rawUrl) return;
 
-    </main>
-
-    <!-- טעינת ה-API הרשמי של YouTube -->
-    <script src="https://www.youtube.com/iframe_api"></script>
-
-    <script>
-        let player;
-        let isApiReady = false;
-
-        // 1. פונקציית אתחול נגן ה-YouTube הרשמי
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('youtube-player', {
-                height: '100%',
-                width: '100%',
-                videoId: 'M7lc1UVf-VE', // סרטון דיפולטיבי להדגמה
-                playerVars: {
-                    'playsinline': 1,
-                    'autoplay': 0,
-                    'controls': 1,
-                    'rel': 0
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
+        // הוספת פרוטוקול במידה וחסר
+        if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            rawUrl = 'https://' + rawUrl;
+            urlInput.value = rawUrl;
         }
 
-        function onPlayerReady(event) {
-            isApiReady = true;
-            document.getElementById('player-status').innerText = "מצב: הנגן מוכן לפעולה.";
-        }
+        startLoading();
+        viewport.src = rawUrl;
+    }
 
-        function onPlayerStateChange(event) {
-            let states = {
-                '-1': 'לא התחיל',
-                '0': 'הסתיים',
-                '1': 'מנגן כעת',
-                '2': 'מושהה',
-                '3': 'טוען...',
-                '5': 'וידאו מוכן'
-            };
-            if (states[event.data]) {
-                document.getElementById('player-status').innerText = "מצב: " + states[event.data];
-            }
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            loadUrl();
         }
+    }
 
-        // חילוץ מזהה סרטון (Video ID) מקישורים שונים
-        function extractVideoID(url) {
-            let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            let match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : url;
+    function reloadViewport() {
+        if (viewport.src && viewport.src !== 'about:blank') {
+            startLoading();
+            viewport.contentWindow.location.reload();
         }
+    }
 
-        // טעינת סרטון לנגן לפי הקלט
-        function loadVideoFromInput() {
-            let input = document.getElementById('video-input').value.trim();
-            if (!input) return;
-            
-            let videoId = extractVideoID(input);
-            if (player && isApiReady) {
-                player.loadVideoById(videoId);
-                switchTab('youtube-tab');
+    function goHome() {
+        urlInput.value = '';
+        tabTitle.textContent = 'כרטיסייה חדשה';
+        viewport.src = 'about:blank';
+    }
+
+    function navigateBack() {
+        try {
+            viewport.contentWindow.history.back();
+        } catch (e) {
+            console.log('חזרה אחורה אינה זמינה');
+        }
+    }
+
+    function navigateForward() {
+        try {
+            viewport.contentWindow.history.forward();
+        } catch (e) {
+            console.log('מעבר קדימה אינו זמין');
+        }
+    }
+
+    function startLoading() {
+        progressBar.classList.add('is-loading');
+        tabTitle.textContent = 'טוען...';
+    }
+
+    function stopLoading() {
+        progressBar.classList.remove('is-loading');
+        try {
+            if (urlInput.value) {
+                const parsedUrl = new URL(urlInput.value);
+                tabTitle.textContent = parsedUrl.hostname;
             } else {
-                alert("הנגן עדיין בלבישת אתחול, אנא נסה שוב עוד רגע.");
+                tabTitle.textContent = 'כרטיסייה חדשה';
             }
+        } catch (e) {
+            tabTitle.textContent = 'דפדפן';
         }
+    }
 
-        // 2. חיפוש תכנים באמצעות YouTube Data API v3
-        async function searchYouTube() {
-            let apiKey = document.getElementById('api-key-input').value.trim();
-            let query = document.getElementById('search-query').value.trim();
+    // מאזין לסיום טעינת הפריים
+    viewport.addEventListener('load', stopLoading);
+</script>
 
-            if (!apiKey) {
-                alert("כדי לחפש בשרתי YouTube בזמן אמת, יש להזין YouTube Data API Key בסרגל הצידי.");
-                return;
-            }
-            if (!query) return;
-
-            let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=12&q=${encodeURIComponent(query)}&type=video&key=${apiKey}`;
-
-            try {
-                let res = await fetch(url);
-                let data = await res.json();
-
-                if (data.error) {
-                    alert("שגיאת API: " + data.error.message);
-                    return;
-                }
-
-                let container = document.getElementById('search-results');
-                container.innerHTML = '';
-
-                data.items.forEach(item => {
-                    let card = document.createElement('div');
-                    card.className = 'video-card';
-                    card.onclick = () => {
-                        player.loadVideoById(item.id.videoId);
-                        switchTab('youtube-tab');
-                    };
-                    card.innerHTML = `
-                        <img src="${item.snippet.thumbnails.medium.url}" alt="thumbnail">
-                        <div class="info">
-                            <div class="title">${item.snippet.title}</div>
-                            <div class="channel">${item.snippet.channelTitle}</div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (err) {
-                alert("שגיאה בחיבור ל-API: " + err.message);
-            }
-        }
-
-        // 3. טעינת אתרים חיצוניים דרך Proxy למעקף X-Frame-Options
-        function loadWebPage() {
-            let url = document.getElementById('web-url-input').value.trim();
-            if (!url) return;
-
-            if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url;
-            }
-
-            // שימוש בשרת Proxy ציבורי המוריד כותרות חסימה (ניתן להחליף בשרת Proxy פרטי)
-            let proxyUrl = `https://corsproxy.io/?` + encodeURIComponent(url);
-            
-            document.getElementById('web-frame').src = proxyUrl;
-        }
-
-        // מעבר בין לשוניות
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-            document.getElementById(tabId).classList.add('active');
-            
-            let btnIndex = tabId === 'youtube-tab' ? 0 : (tabId === 'search-tab' ? 1 : 2);
-            document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
-        }
-    </script>
 </body>
 </html>
