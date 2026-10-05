@@ -26,7 +26,6 @@
             width: 100vw;
         }
 
-        /* סרגל כרטיסיות */
         .tab-bar {
             background-color: #1e1f22;
             height: 40px;
@@ -66,7 +65,6 @@
             text-overflow: ellipsis;
         }
 
-        /* סרגל הכלים ושורת הכתובת */
         .toolbar {
             background-color: #2b2a2a;
             height: 48px;
@@ -135,7 +133,6 @@
             cursor: pointer;
         }
 
-        /* פס טעינה */
         .progress-bar {
             height: 3px;
             width: 100%;
@@ -158,7 +155,6 @@
             100% { left: 100%; }
         }
 
-        /* שטח תצוגה */
         .viewport-container {
             flex: 1;
             width: 100%;
@@ -203,14 +199,20 @@
 </div>
 
 <script>
-    // הכתובת המעודכנת לקובץ proxy.php בתוך תיקיית api בשרת InfinityFree
-    const INFINITYFREE_PROXY_BASE = 'https://YOUR-DOMAIN.infinityfreeapp.com/api/proxy.php?url=';
+    // כתובת השרת ב ב-InfinityFree (שנה במידת הצורך אם מורץ מ-GitHub)
+    const INFINITYFREE_DOMAIN = 'https://YOUR-DOMAIN.infinityfreeapp.com';
+
+    // זיהוי אם הדף רץ מתוך תיקיית api ב-InfinityFree או מ-GitHub Pages
+    const isLocalApiFolder = window.location.pathname.includes('/api/');
+    const PROXY_BASE_URL = isLocalApiFolder 
+        ? 'proxy.php?url=' 
+        : INFINITYFREE_DOMAIN + '/api/proxy.php?url=';
 
     let currentTargetUrl = '';
     const historyStack = [];
     let historyIndex = -1;
 
-    // חילוץ מזהה סרטון יוטיוב והמרתו ל-Embed
+    // חילוץ מזהה סרטון יוטיוב
     function getYouTubeEmbedUrl(url) {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
@@ -231,7 +233,6 @@
         targetInput.value = targetUrl;
         progressBar.classList.add('is-loading');
 
-        // בדיקה אם המשתמש מנסה לטעון סרטון יוטיוב
         const ytEmbed = getYouTubeEmbedUrl(targetUrl);
         let finalFetchUrl = targetUrl;
 
@@ -255,8 +256,7 @@
             historyIndex = historyStack.length - 1;
         }
 
-        // פנייה ל-proxy.php שנמצא בתיקיית api
-        const endpointPath = INFINITYFREE_PROXY_BASE + encodeURIComponent(finalFetchUrl);
+        const endpointPath = PROXY_BASE_URL + encodeURIComponent(finalFetchUrl);
 
         try {
             const response = await fetch(endpointPath);
@@ -265,7 +265,6 @@
             previewFrame.removeAttribute('src');
             previewFrame.srcdoc = text;
 
-            // יירוט לחיצות על קישורים פנימיים במניעת יציאה מהפרוקסי
             previewFrame.onload = () => {
                 progressBar.classList.remove('is-loading');
                 try {
