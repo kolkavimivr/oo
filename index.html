@@ -236,7 +236,7 @@
             historyIndex = historyStack.length - 1;
         }
 
-        const endpointPath = '/api/api/proxy.js?url=' + encodeURIComponent(targetUrl);
+        const endpointPath = '/api/proxy.js?url=' + encodeURIComponent(targetUrl);
 
         try {
             const response = await fetch(endpointPath);
