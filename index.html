@@ -203,9 +203,19 @@
 </div>
 
 <script>
+    // הכתובת המעודכנת לקובץ proxy.php בתוך תיקיית api בשרת InfinityFree
+    const INFINITYFREE_PROXY_BASE = 'https://YOUR-DOMAIN.infinityfreeapp.com/api/proxy.php?url=';
+
     let currentTargetUrl = '';
     const historyStack = [];
     let historyIndex = -1;
+
+    // חילוץ מזהה סרטון יוטיוב והמרתו ל-Embed
+    function getYouTubeEmbedUrl(url) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? 'https://www.youtube.com/embed/' + match[2] : null;
+    }
 
     async function loadUrlThroughProxy(targetUrl, addToHistory = true) {
         const progressBar = document.getElementById('progressBar');
@@ -221,11 +231,20 @@
         targetInput.value = targetUrl;
         progressBar.classList.add('is-loading');
 
-        try {
-            const parsed = new URL(targetUrl);
-            tabTitle.textContent = parsed.hostname;
-        } catch(e) {
-            tabTitle.textContent = 'טוען...';
+        // בדיקה אם המשתמש מנסה לטעון סרטון יוטיוב
+        const ytEmbed = getYouTubeEmbedUrl(targetUrl);
+        let finalFetchUrl = targetUrl;
+
+        if (ytEmbed) {
+            tabTitle.textContent = 'YouTube Video';
+            finalFetchUrl = ytEmbed;
+        } else {
+            try {
+                const parsed = new URL(targetUrl);
+                tabTitle.textContent = parsed.hostname;
+            } catch(e) {
+                tabTitle.textContent = 'טוען...';
+            }
         }
 
         if (addToHistory) {
@@ -236,16 +255,17 @@
             historyIndex = historyStack.length - 1;
         }
 
-        // פנייה ישירה לשירות הפרוקסי הציבורי
-        const endpointPath = 'https://experivr.xo.je/api/proxy.php?url=' + encodeURIComponent(targetUrl);
+        // פנייה ל-proxy.php שנמצא בתיקיית api
+        const endpointPath = INFINITYFREE_PROXY_BASE + encodeURIComponent(finalFetchUrl);
 
         try {
             const response = await fetch(endpointPath);
             const text = await response.text();
 
+            previewFrame.removeAttribute('src');
             previewFrame.srcdoc = text;
 
-            // יירוט לחיצות על קישורים פנימיים כדי שימשיכו לעבור דרך הפרוקסי
+            // יירוט לחיצות על קישורים פנימיים במניעת יציאה מהפרוקסי
             previewFrame.onload = () => {
                 progressBar.classList.remove('is-loading');
                 try {
