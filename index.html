@@ -220,7 +220,7 @@
         currentTargetUrl = targetUrl;
         targetInput.value = targetUrl;
         progressBar.classList.add('is-loading');
-        
+
         try {
             const parsed = new URL(targetUrl);
             tabTitle.textContent = parsed.hostname;
@@ -236,7 +236,8 @@
             historyIndex = historyStack.length - 1;
         }
 
-        const endpointPath = '/api/proxy.js?url=' + encodeURIComponent(targetUrl);
+        // פנייה ישירה לשירות הפרוקסי הציבורי
+        const endpointPath = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
 
         try {
             const response = await fetch(endpointPath);
@@ -244,7 +245,7 @@
 
             previewFrame.srcdoc = text;
 
-            // יירוט לחיצות על קישורים פנימיים כדי שימשיכו לעבור דרך השרת
+            // יירוט לחיצות על קישורים פנימיים כדי שימשיכו לעבור דרך הפרוקסי
             previewFrame.onload = () => {
                 progressBar.classList.remove('is-loading');
                 try {
